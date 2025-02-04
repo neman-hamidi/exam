@@ -1,0 +1,20 @@
+.slm {
+  animation: bizz 4s linear 0s infinite;
+}
+
+@keyframes bizz {
+  0% {
+    transform: translate(0, 0);
+    scale: 1;
+  }
+  33% {
+    transform: translate(0, -5px);
+    scale: 0.97;
+  }
+  66% {
+    transform: translate(0, 5px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}

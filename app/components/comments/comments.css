@@ -1,0 +1,9 @@
+.swiper {
+  height: 100%;
+}
+@media screen and (min-width: 600px) {
+  .autoplay-progress {
+    right: 5rem;
+    bottom: 70px !important;
+  }
+}
