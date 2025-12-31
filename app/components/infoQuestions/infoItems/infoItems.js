@@ -1,39 +1,72 @@
+"use client";
 import React, { useEffect, useRef } from "react";
 
-export default function infoItems({ children, title, desc }) {
+export default function InfoItems({ children, title, desc }) {
   const elementRef = useRef(null);
+
   useEffect(() => {
     const handleMouseMove = (event) => {
-      const x = event.clientX;
-      const y = event.clientY;
+      if (!elementRef.current) return;
+      const rect = elementRef.current.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const moveX = (x - centerX) / 25;
+      const moveY = (y - centerY) / 25;
+
+      elementRef.current.style.transform = `translate(${moveX}px, ${moveY}px) rotateX(${
+        -moveY / 2
+      }deg) rotateY(${moveX / 2}deg)`;
+    };
+
+    const handleMouseLeave = () => {
       if (elementRef.current) {
-        const rect = elementRef.current.getBoundingClientRect();
-        const offsetX = x - (rect.left + rect.width / 2);
-        const offsetY = y - (rect.top + rect.height / 2);
-        elementRef.current.style.transform = `translate(${offsetX / 10}px, ${
-          offsetY / 10
-        }px)`;
+        elementRef.current.style.transform = `translate(0px, 0px) rotateX(0deg) rotateY(0deg)`;
       }
     };
-    document.addEventListener("mousemove", handleMouseMove);
+
+    const el = elementRef.current;
+    el.addEventListener("mousemove", handleMouseMove);
+    el.addEventListener("mouseleave", handleMouseLeave);
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
+      el.removeEventListener("mousemove", handleMouseMove);
+      el.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
+
   return (
-    <div
-      className="rounded-xl bg-gray-100 w-fit my-4 mx-auto md:w-[680px] max-h-[300px]"
-      ref={elementRef}
-    >
-      <div className="flex items-center gap-1 flex-row p-2 md:p-4 md:gap-2 ">
-        <div className="flex items-center flex-col w-20 lg:w-64">
-          <p className="text-center font-bold text-blue-500 text-lg">{title}</p>
-          <div>{children}</div>
+    <div className="p-4 h-full" style={{ perspective: "1000px" }}>
+      <div
+        ref={elementRef}
+        className="group relative h-full min-h-[280px] bg-white/70 backdrop-blur-lg border border-slate-100 rounded-[35px] shadow-sm hover:shadow-2xl hover:shadow-blue-100/50 transition-all duration-500 ease-out p-8 flex flex-col items-center text-center overflow-hidden"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {/* افکت نوری پس‌زمینه هنگام هاور */}
+        <div className="absolute -inset-24 bg-gradient-to-br from-blue-50/40 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+        {/* بخش تصویر/آیکون */}
+        <div className="relative z-10 mb-6 transform transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-2">
+          <div className="drop-shadow-xl">{children}</div>
         </div>
-        <div className="w-1 h-52 rounded-lg my-auto mx-1 bg-yellow-300"></div>
-        <div className="flex items-center text-xs lg:text-base w-40 md:w-80">
-          <p className="pt-4 text-gray-400 leading-8 text-justify">{desc}</p>
-        </div>
+
+        {/* تیتر با استایل نوبار */}
+        <h3 className="relative z-10 text-xl font-black text-slate-800 mb-4 group-hover:text-blue-600 transition-colors">
+          {title}
+        </h3>
+
+        {/* خط جداکننده افقی ظریف */}
+        <div className="relative z-10 w-12 h-1 bg-blue-100 rounded-full mb-4 group-hover:w-24 group-hover:bg-blue-400 transition-all duration-500"></div>
+
+        {/* توضیحات */}
+        <p className="relative z-10 text-slate-500 text-sm leading-7 font-medium text-justify line-clamp-4 group-hover:text-slate-600 transition-colors">
+          {desc}
+        </p>
+
+        {/* دکوراسیون گوشه کارت */}
+        <div className="absolute -bottom-2 -left-2 w-12 h-12 bg-blue-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 scale-0 group-hover:scale-100"></div>
       </div>
     </div>
   );

@@ -11,6 +11,9 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily:{
+        "vazir":"vazir"
+      },
       spacing: {
         "9/10": "90%",
       },

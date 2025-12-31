@@ -1,39 +1,31 @@
-import { useEffect, useRef, useState } from "react";
-export default function move() {
+"use client";
+import { useEffect, useState } from "react";
+import { KeyboardDoubleArrowUp } from "@mui/icons-material";
+
+export default function Move() {
   const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const triggerHeight = 300;
-      if (scrollTop >= triggerHeight) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+    const toggleVisibility = () => {
+      setIsVisible(window.scrollY > 500);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    window.addEventListener("scroll", toggleVisibility);
+    return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
+
   return (
-    <div>
-      {isVisible && (
-        <div
-          style={{
-            backgroundColor: "#3498db",
-            width: "100px",
-            height: "100px",
-            position: "fixed",
-            bottom: "50px",
-            right: "50px",
-            transition: "opacity 0.5s ease",
-            opacity: isVisible ? 1 : 0,
-          }}
-        >
-          I'm visible now!
-        </div>
-      )}
-    </div>
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className={`fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] p-4 
+                 bg-blue-600 text-white rounded-full shadow-2xl shadow-blue-400/50 
+                 transition-all duration-500 hover:bg-blue-700 hover:-translate-y-2
+                 ${
+                   isVisible
+                     ? "opacity-100 scale-100"
+                     : "opacity-0 scale-50 pointer-events-none"
+                 }`}
+    >
+      <KeyboardDoubleArrowUp fontSize="medium" />
+    </button>
   );
 }

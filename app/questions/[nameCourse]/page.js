@@ -1,17 +1,21 @@
-"use client";
-import { useParams } from "next/navigation";
-import Exampleques from "@/app/components/exampleques/exampleques";
-const PostPage = () => {
-  const paramss = useParams();
-  // console.log(paramss);
-  const { nameCourse } = paramss;
+// app/questions/[nameCourse]/page.jsx
 
+export async function generateStaticParams() {
+  return [
+    { nameCourse: 'shimi' },
+    { nameCourse: 'konkur' },
+    { nameCourse: 'zist' },
+  ];
+}
+
+import QuestionPageClient from './QuestionPageClient';
+
+const Page = ({ params }) => {
   return (
     <div>
-
-      <Exampleques  namecourse={nameCourse}/>
+      <QuestionPageClient nameCourse={params.nameCourse} />
     </div>
   );
 };
 
-export default PostPage;
+export default Page;

@@ -7,7 +7,7 @@
   --foreground: #171717;
 }
 @font-face {
-  font-family: vazir;
+  font-family: "vazir";
   src: url(/Fonts/vazir/Vazir-Medium-FD-WOL.eot) format(embedded-opentype),
     url(/Fonts/vazir/Vazir-Medium-FD-WOL.ttf) format(truetype),
     url(/Fonts/vazir/Vazir-Medium-FD-WOL.woff) format(woff),
@@ -25,5 +25,20 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: vazir, Helvetica, sans-serif;
+  font-family: "vazir", Helvetica, sans-serif;
+}
+.font-vazir,
+.MuiTypography-root {
+  font-family: vazir !important;
+}
+.swal-footer {
+  text-align: center;
+}
+.lineMe {
+  line-height: 40px !important;
+}
+@media screen and (min-width:768px) {
+  .lineMe {
+  line-height: 60px !important;
+}
 }

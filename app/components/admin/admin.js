@@ -1,11 +1,12 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import Paper from "@mui/material/Paper";
+import { Paper, IconButton, Tooltip, Chip } from "@mui/material";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import EditIcon from "@mui/icons-material/Edit";
-import { UserContext } from "@/app/userProvider/userProvider";
-import Loading from "../loading/loading";
+import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 import {
   Dialog,
   DialogBackdrop,
@@ -13,649 +14,336 @@ import {
   DialogTitle,
 } from "@headlessui/react";
 import { redirect } from "next/navigation";
+import Loading from "../loading/loading";
 
-export default function admin() {
-  useEffect(() => {
-    if (localStorage.getItem("nameGlobal") === "NemanHamidiUserAdmin") {
-    } else {
-      redirect("/");
-    }
-  }, []);
-  const userContext = useContext(UserContext);
-  const [open, setOpen] = useState(true);
-  const [show, setShow] = useState(false);
-  const [showRegisterQuestion, setShowRegisterQuestion] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-  const [Description, setDescription] = useState("");
-  const [Title, setTitle] = useState("");
-  const [SuggestTime, setSuggestTime] = useState("");
-  const [subTitle, setSubTitle] = useState("");
-  const [question, setQuestion] = useState("");
-  const [qus, setQus] = useState({
+export default function AdminPanel() {
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("questions"); // 'questions' | 'comments'
+
+  // States برای داده‌ها
+  const [questions, setQuestions] = useState([]);
+  const [comments, setComments] = useState([]);
+
+  // States برای مودال‌ها
+  const [modalMode, setModalMode] = useState(null); // 'edit' | 'register' | 'delete'
+  const [selectedId, setSelectedId] = useState(null);
+
+  // States برای فیلدهای فرم
+  const [formData, setFormData] = useState({
+    subTitle: "",
+    Title: "",
+    question: "",
     qu1: "",
     qu2: "",
     qu3: "",
     qu4: "",
     correctAnswer: "",
+    Description: "",
+    SuggestTime: "",
   });
-  const [row, setRow] = useState([]);
-  const [rowComments, setRowComments] = useState([]);
-  const [id, setId] = useState("");
-  const [deleteShow, setDeleteShow] = useState(false);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const getAllQuestions = async () => {
-      const res = await fetch("http://localhost:3010/admin/questions");
-      const data = await res.json();
-      setRow(data);
-      setLoading(false);
-    };
-    getAllQuestions();
-  }, [row]);
 
+  // امنیت پنل
   useEffect(() => {
-    const getAllComments = async () => {
-      const res = await fetch("http://localhost:3010/comments");
-      const data = await res.json();
-      setRowComments(data);
-    };
-    getAllComments();
-  }, [rowComments]);
+    if (localStorage.getItem("nameGlobal") !== "NemanHamidiUserAdmin") {
+      redirect("/");
+    }
+    fetchAllData();
+  }, []);
 
-  const iconDeleteSubmit = (params) => {
-    fetch(`http://localhost:3010/question/${params}`, {
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [qRes, cRes] = await Promise.all([
+        fetch("http://localhost:3010/admin/questions"),
+        fetch("http://localhost:3010/comments"),
+      ]);
+      setQuestions(await qRes.json());
+      setComments(await cRes.json());
+    } catch (error) {
+      console.error("خطا در دریافت داده‌ها", error);
+    }
+    setLoading(false);
+  };
+
+  // عملیات حذف سوال
+  const handleDeleteSubmit = async () => {
+    await fetch(`http://localhost:3010/question/${selectedId}`, {
       method: "DELETE",
-      body: JSON.stringify(params),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setDeleteShow(false);
-      });
-  };
-  //
-  const openEditModal = (params) => {
-    setId(params.id);
-    fetch(`http://localhost:3010/question/${params.id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setQuestion(data.question);
-        setQus({
-          qu1: data.qu1,
-          qu2: data.qu2,
-          qu3: data.qu3,
-          qu4: data.qu4,
-          correctAnswer: data.correctAnswer,
-        });
-        setShow(true);
-      });
+    });
+    setModalMode(null);
+    fetchAllData();
   };
 
-  const iconEditSubmit = () => {
-    const editUser = {
-      question,
-      Title,
-      SuggestTime,
-      qu1:qus.qu1,
-      qu2:qus.qu2,
-      qu3:qus.qu3,
-      qu4:qus.qu4,
-      correctAnswer:qus.correctAnswer,
-    };
-    fetch(`http://localhost:3010/question/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(editUser),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setShow(false);
-      });
+  // باز کردن مودال ویرایش
+  const handleEditClick = (params) => {
+    setSelectedId(params.id);
+    setFormData({ ...params.row }); // پر کردن فرم با داده‌های ردیف
+    setModalMode("edit");
   };
 
-  const columns = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "Title", headerName: "اسم درس", width: 100 },
-    { field: "question", headerName: "سوالات", width: 130 },
-    {
-      field: "qu1",
-      headerName: "گزینه 1",
-      type: "string",
-      width: 90,
-    },
-    {
-      field: "qu2",
-      headerName: "گزینه 2",
-      type: "string",
-      width: 90,
-    },
-    {
-      field: "qu3",
-      headerName: "گزینه 3",
-      type: "string",
-      width: 90,
-    },
-    {
-      field: "qu4",
-      headerName: "گزینه 4",
-      type: "string",
-      width: 90,
-    },
+  // ثبت یا ویرایش نهایی
+  const handleFormSubmit = async () => {
+    const url =
+      modalMode === "edit"
+        ? `http://localhost:3010/question/${selectedId}`
+        : "http://localhost:3010/sd";
+
+    const method = modalMode === "edit" ? "PUT" : "POST";
+
+    await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    setModalMode(null);
+    setFormData({
+      subTitle: "",
+      Title: "",
+      question: "",
+      qu1: "",
+      qu2: "",
+      qu3: "",
+      qu4: "",
+      correctAnswer: "",
+      Description: "",
+      SuggestTime: "",
+    });
+    fetchAllData();
+  };
+
+  // ستون‌های سوالات
+  const questionColumns = [
+    { field: "Title", headerName: "درس", width: 120 },
+    { field: "question", headerName: "متن سوال", flex: 1, minWidth: 200 },
     {
       field: "correctAnswer",
-      headerName: "جواب",
-      type: "string",
-      width: 90,
+      headerName: "پاسخ",
+      width: 80,
+      renderCell: (p) => (
+        <Chip label={p.value} color="success" size="small" variant="outlined" />
+      ),
     },
     {
       field: "action",
       headerName: "عملیات",
-      width: 130,
+      width: 120,
+      sortable: false,
       renderCell: (params) => (
-        <div className="flex justify-evenly">
-          <span className="cursor-pointer">
-            <DeleteSweepIcon
-              onClick={() => {
-                setId(params.id);
-                setDeleteShow(true);
-              }}
-            />
-          </span>
-          <span className="cursor-pointer">
-            <EditIcon
-              onClick={() => {
-                setId(params.id);
-                openEditModal(params);
-              }}
-            />
-          </span>
+        <div className="flex gap-1">
+          <IconButton color="primary" onClick={() => handleEditClick(params)}>
+            {" "}
+            <EditIcon fontSize="small" />{" "}
+          </IconButton>
+          <IconButton
+            color="error"
+            onClick={() => {
+              setSelectedId(params.id);
+              setModalMode("delete");
+            }}
+          >
+            {" "}
+            <DeleteSweepIcon fontSize="small" />{" "}
+          </IconButton>
         </div>
       ),
     },
   ];
-  // column Comments
-  const columnComments = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "name", headerName: "اسم", width: 130 },
-    {
-      field: "userClass",
-      headerName: "پایه",
-      type: "string",
-      width: 90,
-    },
-    {
-      field: "suggest",
-      headerName: "موضوع",
-      type: "string",
-      width: 90,
-    },
-    {
-      field: "text",
-      headerName: "متن",
-      type: "string",
-      width: 450,
-    },
-    {
-      field: "approved",
-      headerName: "تایید",
-      type: "string",
-      width: 50,
-    },
-    {
-      field: "action",
-      headerName: "عملیات",
-      width: 180,
-      renderCell: (params) => (
-        <div className="flex justify-evenly items-center gap-2">
-          <button
-            className="cursor-pointer"
-            type="submit"
-            onClick={() => {
-              approve(params.id);
-            }}
-          >
-            Approv
-          </button>
-          <button
-            className="cursor-pointer"
-            type="submit"
-            onClick={() => {
-              rejecte(params.id);
-            }}
-          >
-            reject
-          </button>
-          <button
-            className="cursor-pointer"
-            type="submit"
-            onClick={() => {
-              DeleteComment(params.id);
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ];
-  const approve = (params) => {
-    fetch(`http://localhost:3010/approved/${params}`, {
-      method: "put",
-    })
-  };
-  const rejecte = (params) => {
-    fetch(`http://localhost:3010/rejected/${params}`, {
-      method: "put",
-    })
-  };
-  const DeleteComment = (params) => {
-    fetch(`http://localhost:3010/delete/${params}`, {
-      method: "delete",
-      body: params,
-    })
-  };
-  const paginationModel = { page: 0, pageSize: 5 };
-  const registerQuestion = () => {
-    const newQuestion = {
-      subTitle,
-      Title,
-      SuggestTime,
-      question,
-      qu1:qus.qu1,
-      qu2:qus.qu2,
-      qu3:qus.qu3,
-      qu4:qus.qu4,
-      correctAnswer:qus.correctAnswer,
-      Description,
-    };
-    fetch("http://localhost:3010/sd", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newQuestion),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setSubTitle("");
-        setTitle("");
-        setSuggestTime("");
-        setQuestion("");
-        setQus({
-          qu1: "",
-          qu2: "",
-          qu3: "",
-          qu4: "",
-          correctAnswer: "",
-        });
-        setDescription("");
-        setShowRegisterQuestion(false);
-      });
-  };
-  if (loading) {
-    return <Loading />;
-  }
+
+  if (loading) return <Loading />;
+
   return (
-    <>
-      <div>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 dir-rtl font-[vazir]">
+      {/* هدر پنل */}
+      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-2xl shadow-sm">
+        <div>
+          <h1 className="text-2xl font-black text-gray-800">
+            پنل مدیریت هوشمند
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            مدیریت سوالات و نظرات کاربران
+          </p>
+        </div>
         <button
-          type="submit"
-          className="p-2 bg-yellow-400"
-          onClick={() => setShowRegisterQuestion(true)}
+          onClick={() => setModalMode("register")}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-all shadow-lg shadow-blue-100"
         >
-          ثبت سوال
+          <AddIcon /> ثبت سوال جدید
         </button>
-        {showRegisterQuestion && (
-          <>
-            <div className="w-screen h-screen fixed top-1 right-auto left-auto transition-all duration-1000 z-40">
-              <div className="w-2/5 h-full mx-auto bg-gray-100 shadow-lg  rounded-lg">
-                <p className="text-center text-2xl  pt-20">ادیت سوالات</p>
-                <div className="flex flex-row flex-wrap gap-4 pt-4">
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>subDomain</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={subTitle}
-                      onChange={(e) => setSubTitle(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>عنوان درس</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={Title}
-                      onChange={(e) => setTitle(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>سوال</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>گزینه 1</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={qus.qu1}
-                      onChange={(e) => {
-                        setQus((prevQus) => ({
-                          ...prevQus,
-                          qu1: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>گزینه 2</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={qus.qu2}
-                      onChange={(e) => {
-                        setQus((prevQus) => ({
-                          ...prevQus,
-                          qu2: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>گزینه 3</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={qus.qu3}
-                      onChange={(e) => {
-                        setQus((prevQus) => ({
-                          ...prevQus,
-                          qu3: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>گزینه 4</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={qus.qu4}
-                      onChange={(e) => {
-                        setQus((prevQus) => ({
-                          ...prevQus,
-                          qu4: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>گزینه صحیح</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={qus.correctAnswer}
-                      onChange={(e) => {
-                        setQus((prevQus) => ({
-                          ...prevQus,
-                          correctAnswer: e.target.value,
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>توضیحات</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={Description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2 justify-start items-center">
-                    <label>زمان پیشنهادی</label>
-                    <input
-                      type="text"
-                      className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                      value={SuggestTime}
-                      onChange={(e) => setSuggestTime(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex justify-center items-center gap-3">
-                    <button
-                      type="submit"
-                      className="p-2 border border-gray-300 rounded-lg"
-                      onClick={registerQuestion}
-                    >
-                      تایید
-                    </button>
-                    <button
-                      type="submit"
-                      className="p-2 border border-gray-300 rounded-lg"
-                      onClick={() => setShowRegisterQuestion(false)}
-                    >
-                      لغو
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </div>
-      <div className="w-9/10 mx-auto mt-5" style={{ direction: "ltr" }}>
-        <Paper sx={{ height: 400, width: "100%" }}>
-          <DataGrid
-            rows={row}
-            columns={columns}
-            initialState={{ pagination: { paginationModel } }}
-            pageSizeOptions={[5, 10]}
-            checkboxSelection
-            sx={{ border: 0 }}
-          />
-        </Paper>
 
-        {deleteShow ? (
-          <Dialog open={open} onClose={setOpen} className="relative z-10">
-            <DialogBackdrop
-              transition
-              className="fixed inset-0 bg-gray-500/75 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"
+      {/* تب‌ها */}
+      <div className="max-w-7xl mx-auto mb-6 flex gap-2">
+        <button
+          onClick={() => setActiveTab("questions")}
+          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+            activeTab === "questions"
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-white text-gray-500 hover:bg-gray-100"
+          }`}
+        >
+          مدیریت سوالات
+        </button>
+        <button
+          onClick={() => setActiveTab("comments")}
+          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+            activeTab === "comments"
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-white text-gray-500 hover:bg-gray-100"
+          }`}
+        >
+          نظرات کاربران
+        </button>
+      </div>
+
+      {/* جداول */}
+      <div className="max-w-7xl mx-auto transition-all">
+        <Paper className="overflow-hidden rounded-2xl border-none shadow-xl">
+          <div style={{ height: 500, width: "100%", direction: "ltr" }}>
+            <DataGrid
+              rows={activeTab === "questions" ? questions : comments}
+              columns={
+                activeTab === "questions"
+                  ? questionColumns
+                  : [] /* ستون‌های کامنت مشابه تعریف شود */
+              }
+              pageSizeOptions={[5, 10, 20]}
+              initialState={{
+                pagination: { paginationModel: { pageSize: 10 } },
+              }}
+              sx={{ "& .MuiDataGrid-cell:focus": { outline: "none" } }}
             />
-
-            <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-              <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <DialogPanel
-                  transition
-                  className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-full sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95"
-                >
-                  <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div className="sm:flex sm:items-start">
-                      <div className="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:size-10">
-                        <svg className="size-6 text-red-600">
-                          {/* delete svg*/}
-                          <use href="#exclamation-triangle"></use>
-                        </svg>
-                      </div>
-                      <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                        <DialogTitle
-                          as="h3"
-                          className="text-base font-semibold text-gray-900"
-                        >
-                          آیا از حذف اطمینان دارید ؟
-                        </DialogTitle>
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-500">
-                            آیا میخواید آیتم را به کل حذف کنید ؟
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => iconDeleteSubmit(id)}
-                      className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
-                    >
-                      حذف
-                    </button>
-                    <button
-                      type="button"
-                      data-autofocus
-                      onClick={() => setDeleteShow(false)}
-                      className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                    >
-                      لغو
-                    </button>
-                  </div>
-                </DialogPanel>
-              </div>
-            </div>
-          </Dialog>
-        ) : (
-          ""
-        )}
-      </div>
-      {show ? (
-        <>
-          <div className="w-screen h-screen fixed top-1 right-auto left-auto transition-all duration-1000 z-40">
-            <div className="w-2/5 mx-auto bg-gray-100 shadow-lg  rounded-lg">
-              <div className="flex flex-col gap-4 py-4">
-                <p className="text-center text-2xl">ادیت سوالات</p>
-                <div className="flex flex-col gap-2 justify-start items-center">
-                  <label>سوال</label>
-                  <input
-                    type="text"
-                    className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 justify-start items-center">
-                  <label>گزینه 1</label>
-                  <input
-                    type="text"
-                    className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                    value={qus.qu1}
-                    onChange={(e) => {
-                      setQus((prevQus) => ({
-                        ...prevQus,
-                        qu1: e.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 justify-start items-center">
-                  <label>گزینه 2</label>
-                  <input
-                    type="text"
-                    className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                    value={qus.qu2}
-                    onChange={(e) => {
-                      setQus((prevQus) => ({
-                        ...prevQus,
-                        qu2: e.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 justify-start items-center">
-                  <label>گزینه 3</label>
-                  <input
-                    type="text"
-                    className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                    value={qus.qu3}
-                    onChange={(e) => {
-                      setQus((prevQus) => ({
-                        ...prevQus,
-                        qu3: e.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 justify-start items-center">
-                  <label>گزینه 4</label>
-                  <input
-                    type="text"
-                    className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                    value={qus.qu4}
-                    onChange={(e) => {
-                      setQus((prevQus) => ({
-                        ...prevQus,
-                        qu4: e.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 justify-start items-center">
-                  <label>گزینه صحیح</label>
-                  <input
-                    type="text"
-                    className="p-2 border border-gray-300 max-w-[500px] rounded-lg"
-                    value={qus.correctAnswer}
-                    onChange={(e) => {
-                      setQus((prevQus) => ({
-                        ...prevQus,
-                        correctAnswer: e.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-                <div className="flex justify-center items-center gap-3">
-                  <button
-                    type="submit"
-                    className="p-2 border border-gray-300 rounded-lg"
-                    onClick={iconEditSubmit}
-                  >
-                    تایید
-                  </button>
-                  <button
-                    type="submit"
-                    className="p-2 border border-gray-300 rounded-lg"
-                    onClick={() => setShow(false)}
-                  >
-                    لغو
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
-        </>
-      ) : (
-        ""
-      )}
-      {/* comments */}
-      <p className="w-9/10 mx-auto text-end mt-10 text-3xl">Comments</p>
-      <div className="w-9/10 mx-auto mt-5" style={{ direction: "ltr" }}>
-        <Paper sx={{ height: 400, width: "100%" }}>
-          <DataGrid
-            rows={rowComments}
-            columns={columnComments}
-            initialState={{ pagination: { paginationModel } }}
-            pageSizeOptions={[5, 10]}
-            checkboxSelection
-            sx={{ border: 0 }}
-          />
         </Paper>
       </div>
-    </>
+
+      {/* مودال فرم (ثبت و ویرایش) */}
+      <Dialog
+        open={modalMode === "edit" || modalMode === "register"}
+        onClose={() => setModalMode(null)}
+        className="relative z-50"
+      >
+        <DialogBackdrop className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[90vh] dir-rtl">
+            <DialogTitle className="text-xl font-bold mb-6 text-gray-800 border-b pb-4">
+              {modalMode === "edit" ? "ویرایش سوال" : "ثبت سوال جدید"}
+            </DialogTitle>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField
+                label="عنوان درس"
+                value={formData.Title}
+                onChange={(v) => setFormData({ ...formData, Title: v })}
+              />
+              <InputField
+                label="زیرعنوان"
+                value={formData.subTitle}
+                onChange={(v) => setFormData({ ...formData, subTitle: v })}
+              />
+              <div className="md:col-span-2">
+                <InputField
+                  label="متن سوال"
+                  value={formData.question}
+                  onChange={(v) => setFormData({ ...formData, question: v })}
+                />
+              </div>
+              <InputField
+                label="گزینه ۱"
+                value={formData.qu1}
+                onChange={(v) => setFormData({ ...formData, qu1: v })}
+              />
+              <InputField
+                label="گزینه ۲"
+                value={formData.qu2}
+                onChange={(v) => setFormData({ ...formData, qu2: v })}
+              />
+              <InputField
+                label="گزینه ۳"
+                value={formData.qu3}
+                onChange={(v) => setFormData({ ...formData, qu3: v })}
+              />
+              <InputField
+                label="گزینه ۴"
+                value={formData.qu4}
+                onChange={(v) => setFormData({ ...formData, qu4: v })}
+              />
+              <InputField
+                label="عدد گزینه صحیح"
+                value={formData.correctAnswer}
+                onChange={(v) => setFormData({ ...formData, correctAnswer: v })}
+              />
+              <InputField
+                label="زمان پیشنهادی"
+                value={formData.SuggestTime}
+                onChange={(v) => setFormData({ ...formData, SuggestTime: v })}
+              />
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={handleFormSubmit}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all"
+              >
+                تایید نهایی
+              </button>
+              <button
+                onClick={() => setModalMode(null)}
+                className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              >
+                لغو
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* مودال حذف */}
+      <Dialog
+        open={modalMode === "delete"}
+        onClose={() => setModalMode(null)}
+        className="relative z-50"
+      >
+        <DialogBackdrop className="fixed inset-0 bg-red-900/20 backdrop-blur-sm" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-sm w-full bg-white rounded-2xl p-6 text-center dir-rtl">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <DeleteSweepIcon fontSize="large" />
+            </div>
+            <DialogTitle className="text-lg font-bold">حذف اطلاعات</DialogTitle>
+            <p className="text-gray-500 text-sm mt-2">
+              آیا از حذف این مورد اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleDeleteSubmit}
+                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold"
+              >
+                حذف کن
+              </button>
+              <button
+                onClick={() => setModalMode(null)}
+                className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold"
+              >
+                بی‌خیال
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </div>
   );
 }
+
+// کامپوننت کمکی برای اینپوت‌ها
+const InputField = ({ label, value, onChange }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-bold text-gray-500 mr-2">{label}</label>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm"
+    />
+  </div>
+);

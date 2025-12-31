@@ -1,89 +1,154 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import InfoItems from "./infoItems/infoItems";
 import Image from "next/image";
 
-export default function infoQuestions() {
+export default function InfoQuestions() {
   const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
-      const desktopTriggerHeight = 1000;  // Desktop
-      const mobileTriggerHeight = 1970;    // Phone
-      if (window.innerWidth >= 768) {
-        if (scrollTop >= desktopTriggerHeight) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
+      // بهینه سازی اعداد بر اساس تجربه کاربری مدرن
+      const triggerHeight = window.innerWidth >= 768 ? 800 : 1600;
+
+      if (scrollTop >= triggerHeight) {
+        setIsVisible(true);
       } else {
-        if (scrollTop >= mobileTriggerHeight) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
+        setIsVisible(false);
       }
     };
+
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
   return (
-    <>
-      <div className="flex flex-wrap justify-center">
-        <InfoItems
-          desc="
-            سوالات هر مبحث درسی رو (پس از تدریس دبیر) جواب بده و اونقدر تمرین کن
-            تا به درس مورد نظر مسلط بشی. با ویژگی حل تمرین در بانک سوال نیازی به
-            تمرین‌های اضافی نداری!
-          "
-          title="حل تمرین"
+    <section className="py-20 bg-slate-50/50 font-[vazir] dir-rtl">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* عنوان بخش (اختیاری اما توصیه می شود) */}
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-3xl md:text-4xl font-black text-slate-800">
+            امکانات و ویژگی‌ها
+          </h2>
+          <p className="text-slate-500">
+            هر آنچه برای موفقیت در آزمون‌ها نیاز دارید، یکجا در اختیار شماست
+          </p>
+        </div>
+
+        {/* گرید کارت‌ها - در دسکتاپ ۳ تایی، تبلت ۲ تایی و موبایل تک ستون */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <InfoItems
+            title="حل تمرین"
+            desc="سوالات هر مبحث درسی را پس از تدریس دبیر جواب بده و آنقدر تمرین کن تا مسلط شوی. با ویژگی حل تمرین، نیازی به کتاب‌های تستی حجیم نداری!"
+          >
+            <Image
+              src="/images/1.png"
+              width={180}
+              height={180}
+              alt="حل تمرین"
+              className="object-contain"
+              unoptimized
+            />
+          </InfoItems>
+
+          <InfoItems
+            title="حل آزمون"
+            desc="به راحتی آزمون‌های زمان‌دار بساز و خودت را به چالش بکش. بلافاصله پس از اتمام، تحلیل دقیق و مشاوره هوشمند دریافت کن."
+          >
+            <Image
+              src="/images/2.png"
+              width={180}
+              height={180}
+              alt="حل آزمون"
+              className="object-contain"
+              unoptimized
+            />
+          </InfoItems>
+
+          <InfoItems
+            title="آزمون‌های من"
+            desc="دسترسی به تمام آزمون‌هایی که خودت ساختی یا دبیرت ارسال کرده است. آرشیو کامل سوالات گزینه دو در دستان شماست."
+          >
+            <Image
+              src="/images/3.png"
+              width={180}
+              height={180}
+              alt="آزمون‌های من"
+              className="object-contain"
+              unoptimized
+            />
+          </InfoItems>
+
+          <InfoItems
+            title="سوال‌های من"
+            desc="سوالات دشوار یا اشتباهاتت را علامت‌گذاری کن. اینجا لیست شخصی‌سازی شده از نقاط ضعف و علایق تستی تو قرار دارد."
+          >
+            <Image
+              src="/images/4.png"
+              width={180}
+              height={180}
+              alt="سوال‌های من"
+              className="object-contain"
+              unoptimized
+            />
+          </InfoItems>
+
+          <InfoItems
+            title="کارنامه‌های من"
+            desc="تحلیل دقیق هر آزمون به تفکیک درس و مبحث. روند پیشرفت خود را در آزمون‌های مدرسه و کشوری مقایسه و بررسی کنید."
+          >
+            <Image
+              src="/images/5.png"
+              width={180}
+              height={180}
+              alt="کارنامه‌ها"
+              className="object-contain"
+              unoptimized
+            />
+          </InfoItems>
+
+          <InfoItems
+            title="وضعیت من"
+            desc="گزارش آماری هوشمند از روند تحصیلی شما. نقاط قوت و ضعف خود را بر اساس نمودارهای پیشرفت به دقت شناسایی کنید."
+          >
+            <Image
+              src="/images/6.png"
+              width={180}
+              height={180}
+              alt="وضعیت تحصیلی"
+              className="object-contain"
+              unoptimized
+            />
+          </InfoItems>
+        </div>
+
+        {/* دکمه فراخوان پایین بخش */}
+        <div
+          className={`mt-20 flex justify-center transition-all duration-1000 transform ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+          }`}
         >
-          <Image src="/images/1.png" width={273} height={273} alt="" />
-        </InfoItems>
-        <InfoItems
-          title="حل آزمون"
-          desc="با ویژگی ساخت آزمون بانک سوال به راحتی در درسهای مختلف با زمانبندی مشخص از خودت آزمون بگیر. به سوالات آزمون پاسخ بده و به سادگی کارنامه و مشاوره دریافت کن."
-        >
-          <Image src="/images/2.png" width={273} height={273} alt="" />
-        </InfoItems>
-        <InfoItems
-          title="آزمون های من"
-          desc=" در بخش آزمون‌های من در بانک سوال به آزمون هایی که قبلا ساختی، یا آزمون‌هایی که دبیرت برات ارسال کرده و آزمون ‌های پیشنهادهای گزینه دو مثل پیش آزمون ها دسترسی داری."
-        >
-          <Image src="/images/3.png" width={273} height={273} alt="" />
-        </InfoItems>
-        <InfoItems
-          title="سوال های من"
-          desc="شما می توانید سوالاتی را به دلخواه خود علامت گذاری کنید. در بخش سوال‌های من لیست سوالات مورد علاقه ات و سوالاتی که در نرم افزار غلط جواب دادی به همراه پاسخ تشریحی آن قابل دسترس است."
-        >
-          <Image src="/images/4.png" width={273} height={273} alt="" />
-        </InfoItems>
-        <InfoItems
-          title="کارنامه های من"
-          desc="هر آزمونی در گزینه دو کارنامه ای دارد. در بخش کارنامه‌های من امکان دسترسی به کارنامه تمام آزمون هایی که شرکت کردی به تفکیک آزمون (آزمون خودم، آزمون مدرسه و آزمون گزینه دو) وجود دارد."
-        >
-          <Image src="/images/5.png" width={273} height={273} alt="" />
-        </InfoItems>
-        <InfoItems
-          title="وضعیت من"
-          desc="در بخش وضعیت من می توانی گزارش از روند تحصیلی خودت دریافت کنی! روند پیشرفت و افت تحصیلیت بر اساس تمام فعالیت هایی که تو بانک انجام دادی، به تفکیک هر درس قابل مشاهده می‌باشد."
-        >
-          <Image src="/images/6.png" width={273} height={273} alt="" />
-        </InfoItems>
+          <button className="group relative overflow-hidden bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-[20px] text-lg font-black transition-all shadow-xl shadow-blue-200 active:scale-95">
+            <span className="relative z-10 flex items-center gap-2">
+              ورود به بانک سوالات هوشمند
+              <svg
+                className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </span>
+          </button>
+        </div>
       </div>
-      <div
-        className={`text-center my-3 transition-all duration-[2000ms] ${
-          isVisible ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <button
-          type="submit"
-          className="py-2 w-6/12 bg-yellow-300 rounded-lg text-sm md:text-lg"
-        >
-          ورود به بانک سوالات
-        </button>
-      </div>
-    </>
+    </section>
   );
 }
