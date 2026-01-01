@@ -5,8 +5,6 @@ import { Paper, IconButton, Tooltip, Chip } from "@mui/material";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 import {
   Dialog,
   DialogBackdrop,
